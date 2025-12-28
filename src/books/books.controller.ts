@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Body, Param, Put, Delete, Query, NotFoundException } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Put, Delete, Query } from '@nestjs/common';
+import { BooksService } from './books.service';
 
 export interface Book {
   id: string;
@@ -12,82 +13,41 @@ export interface Book {
 
 @Controller('books')
 export class BooksController {
-  private books: Book[] = [];
+  constructor(private readonly booksService: BooksService) {}
 
   // GET /books - Get all books with optional filtering
   @Get()
-  findAll(@Query('author') author?: string, @Query('genre') genre?: string): Book[] {
-    let result = [...this.books];
-    
-    if (author) {
-      result = result.filter(book => 
-        book.author.toLowerCase().includes(author.toLowerCase())
-      );
-    }
-    
-    if (genre) {
-      result = result.filter(book => 
-        book.genre?.toLowerCase() === genre.toLowerCase()
-      );
-    }
-    
-    return result;
-  }
-
-  // GET /books/:id - Get a single book by ID
-  @Get(':id')
-  findOne(@Param('id') id: string): Book {
-    const book = this.books.find(book => book.id === id);
-    if (!book) {
-      throw new NotFoundException('Book not found');
-    }
-    return book;
-  }
-
-  // POST /books - Create a new book
-  @Post()
-  create(@Body() book: Omit<Book, 'id'>): Book {
-    const newBook = {
-      id: Math.random().toString(36).substr(2, 9), // Simple ID generation
-      ...book
-    };
-    this.books.push(newBook);
-    return newBook;
-  }
-
-  // PUT /books/:id - Update a book
-  @Put(':id')
-  update(@Param('id') id: string, @Body() updateBookDto: Partial<Book>): Book {
-    const index = this.books.findIndex(book => book.id === id);
-    if (index === -1) {
-      throw new NotFoundException('Book not found');
-    }
-    this.books[index] = { ...this.books[index], ...updateBookDto };
-    return this.books[index];
-  }
-
-  // DELETE /books/:id - Delete a book
-  @Delete(':id')
-  remove(@Param('id') id: string): { message: string } {
-    const index = this.books.findIndex(book => book.id === id);
-    if (index === -1) {
-      throw new NotFoundException('Book not found');
-    }
-    this.books.splice(index, 1);
-    return { message: 'Book deleted successfully' };
+  async findAll(@Query('author') author?: string, @Query('genre') genre?: string): Promise<Book[]> {
+    return this.booksService.findAll(author, genre);
   }
 
   // GET /books/search - Search books by title or author
   @Get('search')
-  search(@Query('q') query: string): Book[] {
-    if (!query) {
-      return this.books;
-    }
-    const searchTerm = query.toLowerCase();
-    return this.books.filter(
-      book => 
-        book.title.toLowerCase().includes(searchTerm) ||
-        book.author.toLowerCase().includes(searchTerm)
-    );
+  async search(@Query('q') query: string): Promise<Book[]> {
+    return this.booksService.search(query);
+  }
+
+  // GET /books/:id - Get a single book by ID
+  @Get(':id')
+  async findOne(@Param('id') id: string): Promise<Book> {
+    return this.booksService.findOne(id);
+  }
+
+  // POST /books - Create a new book
+  @Post()
+  async create(@Body() book: Omit<Book, 'id'>): Promise<Book> {
+    return this.booksService.create(book);
+  }
+
+  // PUT /books/:id - Update a book
+  @Put(':id')
+  async update(@Param('id') id: string, @Body() updateBookDto: Partial<Book>): Promise<Book> {
+    return this.booksService.update(id, updateBookDto);
+  }
+
+  // DELETE /books/:id - Delete a book
+  @Delete(':id')
+  async remove(@Param('id') id: string): Promise<{ message: string }> {
+    return this.booksService.remove(id);
   }
 }
