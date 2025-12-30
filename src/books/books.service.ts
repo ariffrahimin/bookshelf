@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import type { Book } from './books.controller';
 
@@ -7,14 +11,8 @@ export class BooksService {
   private readonly client: SupabaseClient;
 
   constructor() {
-    const url = process.env.SUPABASE_URL ?? process.env.NEXT_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_PROJECT_URL;
-    const key =
-      process.env.SECRET_KEY ??
-      process.env.SUPABASE_SERVICE_ROLE_KEY ??
-      process.env.API_KEY ??
-      process.env.SUPABASE_ANON_KEY ??
-      process.env.SUPABASE_KEY ??
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SECRET_KEY ?? process.env.API_KEY;
 
     if (!url || !key) {
       throw new Error(
@@ -28,7 +26,9 @@ export class BooksService {
   async findAll(author?: string, genre?: string): Promise<Book[]> {
     let query = this.client
       .from('books')
-      .select('id,title,author,publishedYear:published_year,genre,isbn,description');
+      .select(
+        'id,title,author,publishedYear:published_year,genre,isbn,description',
+      );
 
     if (author) {
       query = query.ilike('author', `%${author}%`);
@@ -55,7 +55,9 @@ export class BooksService {
     const term = q.toLowerCase();
     const { data, error } = await this.client
       .from('books')
-      .select('id,title,author,publishedYear:published_year,genre,isbn,description')
+      .select(
+        'id,title,author,publishedYear:published_year,genre,isbn,description',
+      )
       .or(`title.ilike.%${term}%,author.ilike.%${term}%`);
 
     if (error) {
@@ -68,7 +70,9 @@ export class BooksService {
   async findOne(id: string): Promise<Book> {
     const { data, error } = await this.client
       .from('books')
-      .select('id,title,author,publishedYear:published_year,genre,isbn,description')
+      .select(
+        'id,title,author,publishedYear:published_year,genre,isbn,description',
+      )
       .eq('id', id)
       .maybeSingle();
 
@@ -96,7 +100,9 @@ export class BooksService {
     const { data, error } = await this.client
       .from('books')
       .insert(payload)
-      .select('id,title,author,publishedYear:published_year,genre,isbn,description')
+      .select(
+        'id,title,author,publishedYear:published_year,genre,isbn,description',
+      )
       .single();
 
     if (error) {
@@ -109,18 +115,26 @@ export class BooksService {
   async update(id: string, updateBookDto: Partial<Book>): Promise<Book> {
     const payload: Record<string, unknown> = {};
 
-    if (typeof updateBookDto.title !== 'undefined') payload.title = updateBookDto.title;
-    if (typeof updateBookDto.author !== 'undefined') payload.author = updateBookDto.author;
-    if (typeof updateBookDto.publishedYear !== 'undefined') payload.published_year = updateBookDto.publishedYear;
-    if (typeof updateBookDto.genre !== 'undefined') payload.genre = updateBookDto.genre;
-    if (typeof updateBookDto.isbn !== 'undefined') payload.isbn = updateBookDto.isbn;
-    if (typeof updateBookDto.description !== 'undefined') payload.description = updateBookDto.description;
+    if (typeof updateBookDto.title !== 'undefined')
+      payload.title = updateBookDto.title;
+    if (typeof updateBookDto.author !== 'undefined')
+      payload.author = updateBookDto.author;
+    if (typeof updateBookDto.publishedYear !== 'undefined')
+      payload.published_year = updateBookDto.publishedYear;
+    if (typeof updateBookDto.genre !== 'undefined')
+      payload.genre = updateBookDto.genre;
+    if (typeof updateBookDto.isbn !== 'undefined')
+      payload.isbn = updateBookDto.isbn;
+    if (typeof updateBookDto.description !== 'undefined')
+      payload.description = updateBookDto.description;
 
     const { data, error } = await this.client
       .from('books')
       .update(payload)
       .eq('id', id)
-      .select('id,title,author,publishedYear:published_year,genre,isbn,description')
+      .select(
+        'id,title,author,publishedYear:published_year,genre,isbn,description',
+      )
       .maybeSingle();
 
     if (error) {
@@ -135,7 +149,10 @@ export class BooksService {
   }
 
   async remove(id: string): Promise<{ message: string }> {
-    const { error, count } = await this.client.from('books').delete({ count: 'exact' }).eq('id', id);
+    const { error, count } = await this.client
+      .from('books')
+      .delete({ count: 'exact' })
+      .eq('id', id);
 
     if (error) {
       throw new InternalServerErrorException(error.message);
